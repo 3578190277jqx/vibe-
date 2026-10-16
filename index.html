@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
+<title>AETHER — 沉浸式三维世界</title>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+
+<!-- ============ 加载页 ============ -->
+<div id="loader">
+  <div class="ld-brand">AETHER</div>
+  <div class="ld-track"><i id="ld-bar"></i></div>
+  <div class="ld-num"><span id="ld-pct">0</span>%</div>
+  <div class="ld-tip">正在构建三维世界</div>
+</div>
+
+<!-- ============ WebGL 画布 ============ -->
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
+<div id="cursor"></div>
+
+<!-- ============ 界面层 ============ -->
+<div class="ui">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span>AETHER</span>
+      <small>三维体验工作室</small>
+    </div>
+    <nav class="topnav">
+      <button class="ghost" id="replayBtn">重播开场</button>
+      <button class="solid" data-jump="1">进入世界</button>
+    </nav>
+  </header>
+
+  <div class="progress"><i id="progressBar"></i></div>
+
+  <!-- 章节 1 -->
+  <section class="ch" data-i="0">
+    <div class="ch-inner">
+      <div class="eyebrow">Chapter 01 — Genesis</div>
+      <h2>世界从<br>一颗核心开始</h2>
+      <p>不用点击，不用导航。滚动条就是时间轴——你会被带着穿过整个空间，每一段停留都是一个镜头。</p>
+      <div class="tags"><span>实时三维</span><span>滚动驱动</span><span>零跳转</span></div>
+      <div class="scroll-cue"><i></i><span>向下滚动开始</span></div>
+    </div>
+  </section>
+
+  <!-- 章节 2 -->
+  <section class="ch" data-i="1">
+    <div class="ch-inner">
+      <div class="eyebrow">Chapter 02 — Shards</div>
+      <h2>光在晶体里<br>被折断</h2>
+      <p>十四块碎晶悬浮在同一片虚空中。每一块的表面都在缓慢呼吸，边缘那层冷光来自视角与法线的夹角——离得越远，越亮。</p>
+      <div class="tags"><span>菲涅尔边缘光</span><span>噪声位移</span></div>
+    </div>
+  </section>
+
+  <!-- 章节 3 -->
+  <section class="ch" data-i="2">
+    <div class="ch-inner">
+      <div class="eyebrow">Chapter 03 — Flow</div>
+      <h2>看似固体<br>其实每一帧都在流动</h2>
+      <p>顶点着色器里跑的是一段三维噪声。同一个几何体，因为时间参数不同，永远不会重复同一副样子。</p>
+      <div class="tags"><span>顶点着色器</span><span>程序化形变</span><span>线框外壳</span></div>
+    </div>
+  </section>
+
+  <!-- 章节 4 -->
+  <section class="ch" data-i="3">
+    <div class="ch-inner">
+      <div class="eyebrow">Chapter 04 — Orbit</div>
+      <h2>秩序感来自<br>重复与偏移</h2>
+      <p>四道轨道、六颗卫星。每一条环的倾角都只差几度，但转速各不相同——差异越小，画面越稳。</p>
+      <div class="tags"><span>参数化阵列</span><span>多层旋转</span></div>
+    </div>
+  </section>
+
+  <!-- 章节 5 -->
+  <section class="ch" data-i="4">
+    <div class="ch-inner">
+      <div class="eyebrow">Chapter 05 — Swarm</div>
+      <h2>一百四十四个个体<br>一个方向</h2>
+      <p>每一个方块都在独立起落，但它们的相位只由一个坐标决定。这是"看起来复杂、算起来很便宜"的典型做法。</p>
+      <div class="tags"><span>相位阵列</span><span>正弦波调制</span></div>
+    </div>
+  </section>
+
+  <!-- 章节 6 -->
+  <section class="ch" data-i="5">
+    <div class="ch-inner">
+      <div class="eyebrow">Chapter 06 — Portal</div>
+      <h2>接下来<br>把你的品牌放进来</h2>
+      <p>这一段就是你的产品页、你的品牌宣言、你的转化入口。三维世界不是炫技，是让人愿意多待 40 秒。</p>
+      <div class="cta-actions">
+        <form class="cf" id="ctaForm" autocomplete="off">
+          <input type="email" id="ctaEmail" placeholder="留下邮箱，我们发完整方案给你" required>
+          <button type="submit" id="ctaBtn">获取方案</button>
+        </form>
+        <div class="cta-note" id="ctaNote">演示站点：表单数据暂未接入后端</div>
+      </div>
+      <div class="tags"><span>可接数据库</span><span>可接 CMS</span><span>可分期上线</span></div>
+    </div>
+  </section>
+
+  <!-- 章节指示器 -->
+  <div class="dots" id="dots"></div>
+
+  <footer class="foot">
+    <span>原型演示 · AETHER</span>
+    <span id="fps">—</span>
+  </footer>
+
+</div>
+
+<div id="scroll-space"></div>
+<div id="errbox" hidden></div>
+<noscript><div style="padding:40px;color:#fff">需要开启 JavaScript 才能浏览这个三维世界。</div></noscript>
+
+<script type="module" src="./world.js"></script>
+</body>
+</html>

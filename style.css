@@ -1,0 +1,319 @@
+/* ============================================================
+   AETHER — 沉浸式三维世界 · 样式层
+   画布固定全屏，文字层浮在其上，滚动由 #scroll-space 撑高
+   ============================================================ */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --ink:#f5f5f7;
+  --ink-2:rgba(245,245,247,.64);
+  --ink-3:rgba(245,245,247,.42);
+  --line:rgba(255,255,255,.12);
+  --accent:#7ad1ff;
+  --accent-2:#a78bfa;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}
+
+html{scroll-behavior:auto}
+body{
+  background:#05060a;
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+  line-height:1.5;
+}
+/* 加载完成前锁滚动 */
+body:not(.loaded){overflow:hidden;height:100vh}
+
+/* ---------- 画布 ---------- */
+#scene{
+  position:fixed;inset:0;
+  width:100%;height:100%;
+  display:block;
+  z-index:1;
+  opacity:0;
+  transition:opacity 1.6s var(--ease);
+}
+body.loaded #scene{opacity:1}
+
+/* 暗角 + 极淡扫描线，让画面更"film" */
+.vignette{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:
+    radial-gradient(ellipse 78% 68% at 50% 46%,transparent 42%,rgba(3,4,7,.62) 100%),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px);
+}
+
+/* ---------- 自定义光标光晕 ---------- */
+#cursor{
+  position:fixed;top:0;left:0;z-index:6;
+  width:340px;height:340px;margin:-170px 0 0 -170px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(122,209,255,.13) 0%,rgba(167,139,250,.07) 34%,transparent 66%);
+  mix-blend-mode:screen;
+  opacity:0;transition:opacity .8s var(--ease);
+  will-change:transform;
+}
+body.loaded #cursor{opacity:1}
+
+/* ---------- 界面层 ---------- */
+.ui{position:fixed;inset:0;z-index:4;pointer-events:none}
+.ui a,.ui button,.ui input{pointer-events:auto}
+
+/* 顶栏 */
+.topbar{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:22px clamp(20px,5vw,64px);
+}
+.brand{
+  display:flex;align-items:baseline;gap:10px;
+  font-size:14px;font-weight:650;letter-spacing:.24em;
+  opacity:0;transform:translateY(-10px);
+  transition:opacity .9s var(--ease) .9s,transform .9s var(--ease) .9s;
+}
+body.loaded .brand{opacity:1;transform:none}
+.brand small{
+  font-size:10.5px;font-weight:400;letter-spacing:.14em;
+  color:var(--ink-3);
+}
+.brand-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 12px var(--accent);
+  animation:blip 2.6s var(--ease) infinite;
+}
+@keyframes blip{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+
+.topnav{display:flex;gap:10px;align-items:center}
+.topnav button{
+  font:inherit;font-size:12.5px;letter-spacing:.04em;
+  cursor:pointer;border-radius:100px;
+  padding:9px 18px;
+  transition:all .3s var(--ease);
+  opacity:0;transform:translateY(-10px);
+}
+body.loaded .topnav button{opacity:1;transform:none;transition-delay:1s}
+.ghost{
+  background:transparent;color:var(--ink-2);
+  border:1px solid var(--line);
+}
+.ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.34);background:rgba(255,255,255,.05)}
+.solid{
+  background:var(--ink);color:#05060a;border:1px solid var(--ink);font-weight:600;
+}
+.solid:hover{transform:scale(1.05)}
+
+/* 顶部进度条 */
+.progress{
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:rgba(255,255,255,.06);
+}
+.progress i{
+  display:block;height:100%;width:0;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  box-shadow:0 0 14px rgba(122,209,255,.75);
+  transition:width .1s linear;
+}
+
+/* ---------- 章节文字 ---------- */
+.ch{
+  position:absolute;inset:0;
+  display:flex;align-items:center;
+  padding:0 clamp(20px,7vw,120px);
+  pointer-events:none;
+}
+.ch-inner{
+  max-width:580px;
+  opacity:0;transform:translateY(30px);
+  transition:opacity 1.1s var(--ease) 1.05s,transform 1.3s var(--ease-out) 1.05s;
+  will-change:transform,opacity;
+}
+body.loaded .ch-inner{opacity:1;transform:none}
+
+.eyebrow{
+  font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:20px;
+  font-weight:500;
+}
+.ch h2{
+  font-size:clamp(30px,5.4vw,64px);
+  line-height:1.06;
+  letter-spacing:-.035em;
+  font-weight:700;
+  margin-bottom:22px;
+  text-wrap:balance;
+  text-shadow:0 4px 40px rgba(0,0,0,.6);
+}
+.ch p{
+  font-size:clamp(14.5px,1.35vw,16.5px);
+  line-height:1.78;
+  color:var(--ink-2);
+  max-width:470px;
+  text-shadow:0 2px 24px rgba(0,0,0,.6);
+}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:26px}
+.tags span{
+  font-size:11.5px;letter-spacing:.03em;
+  color:var(--ink-3);
+  border:1px solid var(--line);
+  border-radius:100px;
+  padding:5px 13px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  background:rgba(255,255,255,.03);
+}
+
+.scroll-cue{
+  display:flex;align-items:center;gap:12px;
+  margin-top:46px;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.scroll-cue i{
+  display:block;width:52px;height:1px;
+  background:linear-gradient(90deg,var(--ink-3),transparent);
+  animation:cue 2.4s var(--ease) infinite;
+}
+@keyframes cue{0%,100%{opacity:.3;transform:scaleX(.55)}50%{opacity:1;transform:scaleX(1)}}
+
+/* CTA 表单 */
+.cta-actions{pointer-events:none;margin-top:34px}
+.cf{display:flex;gap:10px;flex-wrap:wrap;max-width:470px}
+.cf input{
+  flex:1 1 210px;min-width:0;
+  font:inherit;font-size:14px;
+  color:var(--ink);
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--line);
+  border-radius:100px;
+  padding:13px 20px;
+  outline:none;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  transition:border-color .3s var(--ease),background .3s var(--ease);
+}
+.cf input::placeholder{color:var(--ink-3)}
+.cf input:focus{border-color:rgba(122,209,255,.6);background:rgba(122,209,255,.07)}
+.cf button{
+  font:inherit;font-size:13.5px;font-weight:600;
+  cursor:pointer;white-space:nowrap;
+  color:#05060a;background:var(--ink);
+  border:none;border-radius:100px;padding:13px 26px;
+  transition:transform .3s var(--ease),background .3s var(--ease);
+}
+.cf button:hover{transform:scale(1.04)}
+.cf button.ok{background:#8ef5b0}
+.cta-note{
+  margin-top:14px;font-size:11.5px;color:var(--ink-3);letter-spacing:.03em;
+}
+
+/* ---------- 章节指示器 ---------- */
+.dots{
+  position:absolute;right:clamp(18px,4vw,44px);top:50%;
+  transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:16px;
+  opacity:0;transition:opacity 1s var(--ease) 1.3s;
+}
+body.loaded .dots{opacity:1}
+.dots button{
+  position:relative;
+  width:26px;height:2px;padding:0;border:none;cursor:pointer;
+  background:rgba(255,255,255,.2);
+  border-radius:2px;
+  transition:all .45s var(--ease);
+}
+.dots button::after{
+  content:attr(data-label);
+  position:absolute;right:38px;top:50%;
+  transform:translateY(-50%) translateX(6px);
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-2);white-space:nowrap;
+  opacity:0;transition:all .35s var(--ease);
+  pointer-events:none;
+}
+.dots button:hover::after{opacity:1;transform:translateY(-50%)}
+.dots button:hover{background:rgba(255,255,255,.5);width:34px}
+.dots button.on{
+  background:var(--accent);
+  width:40px;
+  box-shadow:0 0 12px rgba(122,209,255,.8);
+}
+
+/* ---------- 页脚 ---------- */
+.foot{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;justify-content:space-between;
+  padding:20px clamp(20px,5vw,64px);
+  font-size:11px;letter-spacing:.1em;color:var(--ink-3);
+  opacity:0;transition:opacity 1s var(--ease) 1.5s;
+}
+body.loaded .foot{opacity:1}
+
+/* ---------- 加载页 ---------- */
+#loader{
+  position:fixed;inset:0;z-index:20;
+  background:#05060a;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:26px;
+  transition:opacity .9s var(--ease),visibility .9s;
+}
+body.loaded #loader{opacity:0;visibility:hidden}
+.ld-brand{
+  font-size:clamp(30px,6vw,54px);
+  font-weight:700;letter-spacing:.42em;
+  text-indent:.42em;
+  background:linear-gradient(96deg,#7ad1ff,#a78bfa 55%,#f5f5f7);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:breathe 3.4s var(--ease) infinite alternate;
+}
+@keyframes breathe{from{opacity:.6;letter-spacing:.36em}to{opacity:1;letter-spacing:.46em}}
+.ld-track{width:190px;height:1px;background:rgba(255,255,255,.14);overflow:hidden}
+.ld-track i{
+  display:block;height:100%;width:0;
+  background:linear-gradient(90deg,#7ad1ff,#a78bfa);
+  transition:width .18s linear;
+}
+.ld-num{font-size:11.5px;letter-spacing:.3em;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.ld-tip{font-size:11px;letter-spacing:.2em;color:rgba(245,245,247,.24);text-transform:uppercase}
+
+/* ---------- 滚动撑高 ---------- */
+#scroll-space{height:640vh;position:relative;z-index:0}
+
+/* ---------- 错误提示 ---------- */
+#errbox{
+  position:fixed;left:16px;bottom:16px;z-index:30;
+  max-width:min(520px,calc(100vw - 32px));
+  background:#2a0d12;border:1px solid #6b1f2a;
+  color:#ffb4c0;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:12px;line-height:1.7;
+  padding:14px 16px;border-radius:10px;
+  white-space:pre-wrap;
+}
+
+/* ---------- 移动端 ---------- */
+@media (max-width:860px){
+  #cursor{display:none}
+  .ch{padding:0 26px;align-items:flex-end;padding-bottom:16vh}
+  .ch h2{font-size:clamp(28px,8.4vw,44px)}
+  .ch p{font-size:14.5px}
+  .dots{right:14px;gap:13px}
+  .dots button::after{display:none}
+  .dots button{width:20px}
+  .dots button.on{width:30px}
+  .brand small{display:none}
+  .topnav .ghost{display:none}
+  .foot span:last-child{display:none}
+  #scroll-space{height:560vh}
+}
+
+/* ---------- 无障碍：减少动态效果 ---------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
+  .ch-inner,.brand,.topnav button,.dots,.foot{transition-duration:.01ms!important}
+}
