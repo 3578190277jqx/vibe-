@@ -218,3 +218,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# AETHER backend: local dependencies, databases and credentials
+node_modules/
+.local/
+.playwright-cli/
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal

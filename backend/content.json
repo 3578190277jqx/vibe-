@@ -1,0 +1,38 @@
+[
+  {
+    "chapter_key": "genesis", "locale": "zh-CN", "sort_order": 0,
+    "eyebrow": "Chapter 01 — Genesis", "title": "世界从\n一颗核心开始",
+    "body": "不用点击，不用导航。滚动条就是时间轴——你会被带着穿过整个空间，每一段停留都是一个镜头。",
+    "tags": ["实时三维", "滚动驱动", "零跳转"]
+  },
+  {
+    "chapter_key": "shards", "locale": "zh-CN", "sort_order": 1,
+    "eyebrow": "Chapter 02 — Shards", "title": "光在晶体里\n被折断",
+    "body": "十四块碎晶悬浮在同一片虚空中。每一块的表面都在缓慢呼吸，边缘那层冷光来自视角与法线的夹角——离得越远，越亮。",
+    "tags": ["菲涅尔边缘光", "噪声位移"]
+  },
+  {
+    "chapter_key": "flow", "locale": "zh-CN", "sort_order": 2,
+    "eyebrow": "Chapter 03 — Flow", "title": "看似固体\n其实每一帧都在流动",
+    "body": "顶点着色器里跑的是一段三维噪声。同一个几何体，因为时间参数不同，永远不会重复同一副样子。",
+    "tags": ["顶点着色器", "程序化形变", "线框外壳"]
+  },
+  {
+    "chapter_key": "orbit", "locale": "zh-CN", "sort_order": 3,
+    "eyebrow": "Chapter 04 — Orbit", "title": "秩序感来自\n重复与偏移",
+    "body": "四道轨道、六颗卫星。每一条环的倾角都只差几度，但转速各不相同——差异越小，画面越稳。",
+    "tags": ["参数化阵列", "多层旋转"]
+  },
+  {
+    "chapter_key": "swarm", "locale": "zh-CN", "sort_order": 4,
+    "eyebrow": "Chapter 05 — Swarm", "title": "一百四十四个个体\n一个方向",
+    "body": "每一个方块都在独立起落，但它们的相位只由一个坐标决定。这是\"看起来复杂、算起来很便宜\"的典型做法。",
+    "tags": ["相位阵列", "正弦波调制"]
+  },
+  {
+    "chapter_key": "portal", "locale": "zh-CN", "sort_order": 5,
+    "eyebrow": "Chapter 06 — Portal", "title": "接下来\n把你的品牌放进来",
+    "body": "这一段就是你的产品页、你的品牌宣言、你的转化入口。三维世界不是炫技，是让人愿意多待 40 秒。",
+    "tags": ["可接数据库", "可接 CMS", "可分期上线"]
+  }
+]

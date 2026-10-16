@@ -1,0 +1,19 @@
+{
+  "name": "aether-3d-world",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env backend/start.js",
+    "test": "node --test tests/*.test.js",
+    "test:postgres": "node --env-file-if-exists=.env --test tests/postgres.integration.js",
+    "db:init": "node --env-file-if-exists=.env scripts/init-db.js",
+    "db:seed": "node --env-file-if-exists=.env scripts/seed-content.js"
+  },
+  "dependencies": {
+    "postgres": "3.4.9"
+  }
+}
