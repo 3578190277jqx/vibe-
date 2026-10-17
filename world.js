@@ -18,6 +18,7 @@ import { UnrealBloomPass }  from './vendor/jsm/postprocessing/UnrealBloomPass.js
 import { OutputPass }       from './vendor/jsm/postprocessing/OutputPass.js';
 import { ANCHORS, AT as POSITIONS, CHAPTER_LABELS, WINDOWS, chapterProgress, chapterFade, activeChapter } from './world-layout.js';
 import { createProductShowcase, animateProducts } from './world-products.js';
+import { bindLeadForm } from './lead-form.js';
 
 /* ---------- 1. 环境 ---------- */
 
@@ -733,7 +734,10 @@ function updateChapters(p){
     el.style.transform = 'translateY(' + ((1 - rise) * (i === 0 ? 0 : 30)).toFixed(1) + 'px)';
 
     const act = op > 0.55;
-    el.querySelectorAll('.cta-actions').forEach(x => { x.style.pointerEvents = act ? 'auto' : 'none'; });
+    el.querySelectorAll('.cta-actions').forEach(x => {
+      x.style.pointerEvents = act ? 'auto' : 'none';
+      x.inert = !act;
+    });
 
     if (dotEls[i]){
       const on = i === activeIndex;
@@ -776,37 +780,15 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
   });
 });
 
-/* 表单：演示态。接入后端时，把下面注释处的 fetch 打开即可 */
-(function form(){
-  const f = document.getElementById('ctaForm');
-  const btn = document.getElementById('ctaBtn');
-  const note = document.getElementById('ctaNote');
-  if (!f) return;
-  f.addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = document.getElementById('ctaEmail').value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-      note.textContent = '邮箱格式看起来不对，再检查一下？';
-      return;
-    }
-    btn.disabled = true;
-    btn.textContent = '提交中…';
-
-    /* —— 接入后端的位置 ——
-       await fetch('/api/leads', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email, source: 'aether-landing' })
-       });
-    */
-
-    setTimeout(() => {
-      btn.textContent = '已收到 ✓';
-      btn.classList.add('ok');
-      note.textContent = '演示站点：数据未真正提交，接入数据库后此处会写入后台。';
-    }, 620);
-  });
-})();
+/* 留资表单：portal 稳定 key；成功/重复必须由后端确认，失败保留邮箱并可重试。 */
+bindLeadForm({
+  form: document.getElementById('ctaForm'),
+  button: document.getElementById('ctaBtn'),
+  emailInput: document.getElementById('ctaEmail'),
+  note: document.getElementById('ctaNote'),
+  trap: document.getElementById('ctaTrap'),
+  getProgress: () => smoothP
+});
 
 /* 光标光晕 */
 (function cursor(){

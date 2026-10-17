@@ -114,16 +114,16 @@
       <div class="eyebrow">07 / 求职交流</div>
       <h2>下一段故事<br>想在你的团队里完成</h2>
       <p>目前希望在义乌、东阳或杭州寻找前端开发、网页制作或交互开发相关机会。欢迎带着岗位要求，聊聊这个项目的实现和可以继续改进的地方。</p>
-      <div class="cta-actions">
+      <div class="cta-actions" inert>
         <form class="cf" id="ctaForm" autocomplete="off" novalidate>
-          <input type="email" id="ctaEmail" name="email" placeholder="招聘交流邮箱（当前为演示）"
-                 aria-label="招聘交流邮箱，当前表单仅供演示" aria-describedby="ctaNote" maxlength="254" required>
+          <input type="email" id="ctaEmail" name="email" placeholder="留下招聘交流邮箱"
+                 aria-label="招聘交流邮箱" aria-describedby="ctaNote" maxlength="254" required>
           <!-- 蜜罐：真实用户看不见也填不到，被填即判定为机器人 -->
           <input type="text" id="ctaTrap" name="company_website" class="hp-field"
                  tabindex="-1" autocomplete="off" aria-hidden="true" hidden>
-          <button type="submit" id="ctaBtn">演示提交</button>
+          <button type="submit" id="ctaBtn">提交邮箱</button>
         </form>
-        <div class="cta-note" id="ctaNote" role="status" aria-live="polite">求职城市：义乌 / 东阳 / 杭州。此表单仅演示，不会实际发送信息。</div>
+        <div class="cta-note" id="ctaNote" role="status" aria-live="polite">求职城市：义乌 / 东阳 / 杭州。留下邮箱，方便后续就岗位与项目进行沟通。</div>
       </div>
       <div class="tags"><span>前端开发</span><span>网页制作</span><span>交互开发</span></div>
     </div>

@@ -4,7 +4,7 @@
 
 后端只提供留资和文案读取。没有后台登录、文案写入 HTTP 接口、邮件发送或供应商集成。运营通过最终部署路线提供的在线数据库 Dashboard 修改文案，数据库凭据只留在服务端。
 
-Node.js 最低版本为 24。前端继续使用原生 ES Module、系统字体和本地 three.js 0.160.0，不需要构建或打包。启动服务仅按白名单提供 `index.html`、`style.css`、`world.js`、`world-layout.js`、`world-products.js` 和 `vendor/**/*.js`，不公开服务端源代码目录、文档、数据库或环境文件；原有相对路径保持不变。
+Node.js 最低版本为 24。前端继续使用原生 ES Module、系统字体和本地 three.js 0.160.0，不需要构建或打包。启动服务仅按白名单提供 `index.html`、`style.css`、`world.js`、`world-layout.js`、`world-products.js`、`lead-form.js` 和 `vendor/**/*.js`，不公开服务端源代码目录、文档、数据库或环境文件；原有相对路径保持不变。
 
 ## 本地运行（SQLite）
 
@@ -139,15 +139,15 @@ locale 缺省为 zh-CN，精确查询，不自动回退其他语言；支持 2�
 
 ## 运营规则与前端边界
 
-数据库键为 `(chapter_key, locale)`。现有 key 为 genesis/shards/flow/orbit/swarm/portal，新章节可以增加新 key，不需要修改数据库枚举。
+数据库键为 `(chapter_key, locale)`。现有页面 key 为 genesis/shards/flow/orbit/swarm/products/portal，新章节可以增加新 key，不需要修改数据库枚举。当前种子仍为原六章文案；本次留资接入不覆盖 CMS 文案或增加 CMS 前端读取。
 
 **CMS 不得改变章节顺序。** 摄像机路径 ANCHORS 和文字窗口 WINDOWS 按索引固定，前端必须按 key 匹配 DOM 的 data-key，不能按接口数组或 sortOrder 重排。sort_order 仅用于 Dashboard 列表。接口按 key 输出确定顺序，不承担场景编排职责。
 
 运营只改 eyebrow、title、body、tags；不要改现有 chapter_key。标题用实际换行符分行；API 不生成 HTML。文案更新时间由数据库触发器维护，初始化脚本仅补缺失行。
 
-现有前端负责 textContent 渲染、标题换行转 br、缺失字段或接口失败沿用 HTML 默认文案、提交中禁用按钮、成功/失败反馈以及重试。后端不会发送方案邮件；任何前端“会发邮件”的文案由用户在后续内容维护中自行确认。
+文案读取 API 已提供，浏览器 CMS 动态读取留待后续步骤接入；应使用 textContent、按换行创建 br、字段缺失或接口失败保留默认文案。后端只保存邮箱，不发送邮件。
 
-当前工作区 HTML 已有 data-key，但 world.js 仍为演示提交，没有同步后的 SQLite 服务文件。本次不改这些前端文件；完整联调需要用户同步已经改造的版本。不能把浏览器中演示态“已收到”当作真实入库成功。
+2026-10-17 已完成真实表单接入：`world.js` 通过原生模块 `lead-form.js` 向同源 `/api/leads` 提交。原第六章表单现位于第七章，按 `data-key="portal"` 定位；上报实际滚动进度、来源、referrer 和蜜罐。只有 201 且有有效 id，或 200 且明确 duplicate，才显示成功。请求期间禁用提交和输入，10 秒超时或失败后保留邮箱并恢复按钮，429 显示服务端剩余秒数。成功后修改邮箱即可重新提交。未显示的章节表单设置 inert，不能被透明控件误触。完整替换位置与联调说明见 `docs/leads-integration.md`。
 
 ## 权限、IP 与日志
 
@@ -191,4 +191,4 @@ npm run test:postgres
 
 大陆节点上线的 ICP 备案为硬前置。确定域名与接入商后提前启动；个人主体可申请，但主体与站点用途须符合接入商规则。排期预留 1～3 周及缓冲，不承诺时限；官方公布材料齐全时在二十个工作日内处理。参见 [工信部门备案说明](https://jxca.miit.gov.cn/bsfw/bszn/cjwt/art/2020/art_869445de6a9f40e98732195df440f99d.html)。
 
-同步前端后再验收：真实成功与重复反馈、断网/超时/限流后的重试、恶意 HTML 纯文本显示、CMS 缺失兜底，以及桌面和 375px 的开场、滚动、章节跳转及表单操作。前端异常仅记录，不在本次范围改写。
+桌面与 375px 的真实成功、重复反馈、断网/超时/503 后重试、真实限流及七章导航已完成本地浏览器验证，详见 `docs/backend-verification.md`。CMS 动态渲染、恶意 HTML 纯文本显示与文案兜底的整页联调仍待 CMS 前端接入；接口已按纯数据输出。

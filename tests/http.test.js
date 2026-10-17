@@ -138,4 +138,5 @@ test('HTTP serves only frontend assets and never backend, environment or databas
   assert.equal((await fetch(url + '/vendor/three.module.js')).status, 200);
   assert.equal((await fetch(url + '/world-layout.js')).status, 200);
   assert.equal((await fetch(url + '/world-products.js')).status, 200);
+  assert.equal((await fetch(url + '/lead-form.js')).status, 200);
 });
