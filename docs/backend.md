@@ -4,7 +4,7 @@
 
 后端只提供留资和文案读取。没有后台登录、文案写入 HTTP 接口、邮件发送或供应商集成。运营通过最终部署路线提供的在线数据库 Dashboard 修改文案，数据库凭据只留在服务端。
 
-Node.js 最低版本为 24。前端继续使用原生 ES Module、系统字体和本地 three.js 0.160.0，不需要构建或打包。启动服务仅按白名单提供原有 `index.html`、`style.css`、`world.js` 和 `vendor/**/*.js`，不公开源代码目录、文档、数据库或环境文件；原有相对路径保持不变。
+Node.js 最低版本为 24。前端继续使用原生 ES Module、系统字体和本地 three.js 0.160.0，不需要构建或打包。启动服务仅按白名单提供 `index.html`、`style.css`、`world.js`、`world-layout.js`、`world-products.js` 和 `vendor/**/*.js`，不公开服务端源代码目录、文档、数据库或环境文件；原有相对路径保持不变。
 
 ## 本地运行（SQLite）
 

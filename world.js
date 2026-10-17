@@ -4,7 +4,7 @@
    结构：
      1) 环境与工具函数
      2) 着色器（自定义 Aether 材质 + 粒子）
-     3) 世界构建（六个章节场景 + 星尘 + 地面网格）
+     3) 世界构建（七个章节场景 + 星尘 + 地面网格）
      4) 摄像机路径与滚动驱动
      5) 章节文字调度
      6) 交互（开场、点击脉冲、导航、表单）
@@ -16,6 +16,8 @@ import { EffectComposer }   from './vendor/jsm/postprocessing/EffectComposer.js'
 import { RenderPass }       from './vendor/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass }  from './vendor/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass }       from './vendor/jsm/postprocessing/OutputPass.js';
+import { ANCHORS, AT as POSITIONS, CHAPTER_LABELS, WINDOWS, chapterProgress, chapterFade, activeChapter } from './world-layout.js';
+import { createProductShowcase, animateProducts } from './world-products.js';
 
 /* ---------- 1. 环境 ---------- */
 
@@ -25,25 +27,9 @@ const MOBILE  = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || wi
 const FOG_COLOR  = new THREE.Color(0x080c18);
 const FOG_DENSITY = 0.0100;
 
-/* 章节锚点：摄像机位置 / 注视目标 / 场景物体位置
-   进度 p 取 0、0.2、0.4、0.6、0.8、1.0 时，摄像机正好落在对应锚点上 */
-const ANCHORS = [
-  { cam: [  0,  1.2,  20 ], tgt: [  0,  0,    0 ] },
-  { cam: [ 14,  2.2,   4 ], tgt: [ 12.5, 4.5, -9 ] },
-  { cam: [ 23, -1.2, -15 ], tgt: [ 23, -1.2, -30 ] },
-  { cam: [ 35,  5,   -33 ], tgt: [ 35,  5,   -46 ] },
-  { cam: [ 45,  1,   -52 ], tgt: [ 45,  3,   -62 ] },
-  { cam: [ 56,  0.6, -73 ], tgt: [ 58,  0,   -88 ] }
-];
-const AT = {
-  core:   new THREE.Vector3(  0,  0,    0 ),
-  shards: new THREE.Vector3( 12.5, 4.5, -9 ),
-  knot:   new THREE.Vector3( 23, -1.2, -30 ),
-  orbit:  new THREE.Vector3( 35,  5,   -46 ),
-  swarm:  new THREE.Vector3( 45,  3,   -62 ),
-  portal: new THREE.Vector3( 58,  0,   -88 )
-};
-const CHAPTER_LABELS = ['Genesis','Shards','Flow','Orbit','Swarm','Portal'];
+/* 布局在 world-layout.js 统一维护；七个锚点的 p = i / 6。
+   必须继续用 getPoint(p)，不能按弧长重参数化。 */
+const AT = Object.fromEntries(Object.entries(POSITIONS).map(([key, xyz]) => [key, new THREE.Vector3(...xyz)]));
 
 /* ---------- 工具 ---------- */
 
@@ -556,7 +542,23 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
   }
   addGlow(gSwarm, 9, 0x6f5fd8, 0.24);
 
-  /* ---- 章节 6：门户 ---- */
+  /* ---- 章节 6：产品展示，模型均由基础几何体构成 ---- */
+  const productBody = aetherMaterial({ colorA: 0x09172a, colorB: 0x294f7a, rim: 0x7ad1ff,
+                                       amp: 0, glow: 1.0, shade: 0.6, pulseScale: 0 });
+  const productTrim = aetherMaterial({ colorA: 0x171935, colorB: 0x5f6591, rim: 0xa78bfa,
+                                       amp: 0, glow: 0.75, shade: 0.55, pulseScale: 0 });
+  const productDetail = aetherMaterial({ colorA: 0x16324a, colorB: 0x7ad1ff, rim: 0x9fe4ff,
+                                         amp: 0, glow: 0.7, shade: 0.4, pulseScale: 0 });
+  const { group: gProducts, items: products } = createProductShowcase({ body: productBody, trim: productTrim, detail: productDetail });
+  gProducts.position.copy(AT.products);
+  gProducts.position.x += MOBILE ? 0 : 4.2;
+  gProducts.scale.setScalar(MOBILE ? 0.48 : 1);
+  gProducts.position.y += MOBILE ? 3.2 : 0;
+  if (MOBILE) products.forEach((product, i) => { product.position.x = (i - 1) * 1.8; });
+  scene.add(gProducts);
+  addGlow(gProducts, 10, 0x4fa8d8, 0.16);
+
+  /* ---- 章节 7：门户 ---- */
   const gPortal = new THREE.Group();
   gPortal.position.copy(AT.portal);
   scene.add(gPortal);
@@ -679,11 +681,6 @@ const camTgtCurve = new THREE.CatmullRomCurve3(
   ANCHORS.map(a => new THREE.Vector3(...a.tgt)), false, 'centripetal', 0.5
 );
 
-const WINDOWS = [
-  [-0.125, 0.125], [ 0.075, 0.325], [ 0.275, 0.525],
-  [ 0.475, 0.725], [ 0.675, 0.925], [ 0.875, 1.125]
-];
-
 let targetP = 0, smoothP = 0;
 let mx = 0, my = 0, smx = 0, smy = 0;
 let pulse = 0, kick = 0;
@@ -713,22 +710,23 @@ const dotEls = CHAPTER_LABELS.map((label, i) => {
   b.setAttribute('aria-label', '跳转到第 ' + (i+1) + ' 段：' + label);
   b.addEventListener('click', () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: (i / 5) * max, behavior: REDUCED ? 'auto' : 'smooth' });
+    window.scrollTo({ top: chapterProgress(i) * max, behavior: REDUCED ? 'auto' : 'smooth' });
   });
   dotsWrap.appendChild(b);
   return b;
 });
 
 function updateChapters(p){
+  const activeIndex = activeChapter(p);
   for (let i = 0; i < chEls.length; i++){
     const el = chEls[i];
     /* 兜底：若 HTML 里加了章节但忘了同步 WINDOWS，按均分推算，避免直接崩掉 */
-    const win = WINDOWS[i] || [ i / chEls.length, (i + 1) / chEls.length ];
+    const center = chapterProgress(i, chEls.length);
+    const win = WINDOWS[i] || [center - 0.125, center + 0.125];
     const [a, b] = win;
     const t = (p - a) / (b - a);
 
-    const rise = smoothstep(0.0, 0.30, t);
-    const fall = 1 - smoothstep(0.70, 1.0, t);
+    const { rise, fall } = chapterFade(t);
     let op = (i === 0) ? (1 - smoothstep(0.55, 1.0, t)) : rise * fall;
 
     el.style.opacity = op.toFixed(3);
@@ -738,8 +736,12 @@ function updateChapters(p){
     el.querySelectorAll('.cta-actions').forEach(x => { x.style.pointerEvents = act ? 'auto' : 'none'; });
 
     if (dotEls[i]){
-      const on = op > 0.5;
-      if (on !== dotEls[i].classList.contains('on')) dotEls[i].classList.toggle('on', on);
+      const on = i === activeIndex;
+      if (on !== dotEls[i].classList.contains('on')) {
+        dotEls[i].classList.toggle('on', on);
+        if (on) dotEls[i].setAttribute('aria-current', 'step');
+        else dotEls[i].removeAttribute('aria-current');
+      }
     }
   }
 }
@@ -770,7 +772,7 @@ document.getElementById('replayBtn').addEventListener('click', () => {
 document.querySelectorAll('[data-jump]').forEach(btn => {
   btn.addEventListener('click', () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: (Number(btn.dataset.jump) / 5) * max, behavior: REDUCED ? 'auto' : 'smooth' });
+    window.scrollTo({ top: chapterProgress(Number(btn.dataset.jump)) * max, behavior: REDUCED ? 'auto' : 'smooth' });
   });
 });
 
@@ -884,7 +886,7 @@ function tick(){
 
   const p = smoothP;
 
-  /* 摄像机沿锚点曲线飞行；p = i/5 时正好落在第 i 个锚点 */
+  /* 摄像机沿锚点曲线飞行；p = i/6 时正好落在第 i 个锚点 */
   camPosCurve.getPoint(p, tmpPos);
   camTgtCurve.getPoint(p, tmpTgt);
 
@@ -974,6 +976,9 @@ function tick(){
     m.rotation.y = time * 0.25 + m.userData.phase * 0.4;
   }
   gSwarm.rotation.y = time * 0.07;
+
+  /* 产品：三个独立的旋转与漂浮模型，减少动态效果时保持静止 */
+  animateProducts(products, REDUCED ? 0 : time);
 
   /* 门户 */
   portalRing.rotation.z  = time * 0.24;
