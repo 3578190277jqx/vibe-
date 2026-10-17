@@ -19,6 +19,7 @@ import { OutputPass }       from './vendor/jsm/postprocessing/OutputPass.js';
 import { ANCHORS, AT as POSITIONS, CHAPTER_LABELS, WINDOWS, chapterProgress, chapterFade, activeChapter } from './world-layout.js';
 import { createProductShowcase, animateProducts } from './world-products.js';
 import { bindLeadForm } from './lead-form.js';
+import { FrameBudget, discardClockDelta } from './world-runtime.js';
 
 /* ---------- 1. 环境 ---------- */
 
@@ -300,6 +301,7 @@ try {
     alpha: false, stencil: false
   });
 } catch (e) {
+  document.body.classList.add('no-webgl');
   fail('这台设备的浏览器不支持 WebGL，无法显示三维世界。');
 }
 
@@ -829,20 +831,16 @@ function onResize(){
 window.addEventListener('resize', onResize);
 
 /* 帧率监测：连续掉帧时自动降档 */
-const perf = { acc: 0, n: 0, checked: 0, throttled: false };
+const perf = new FrameBudget();
 function perfGuard(dt){
-  if (perf.throttled) return;
-  perf.acc += dt; perf.n++;
-  if (perf.n >= 90){
-    const avg = perf.acc / perf.n;
-    if (avg > 27 && renderer){
-      renderer.setPixelRatio(1);
-      if (composer) composer.setPixelRatio(1);
-      perf.throttled = true;
-      const fps = document.getElementById('fps');
-      if (fps) fps.textContent = '已自动降档 · 优先保证流畅';
-    }
-    perf.acc = 0; perf.n = 0;
+  if (!perf.observe(dt)) return;
+  renderer.setPixelRatio(1);
+  if (composer) composer.setPixelRatio(1);
+  onResize(); // 同步画布尺寸、后期处理和粒子 uPixel，不能只缩小 framebuffer。
+  const fps = document.getElementById('fps');
+  if (fps) {
+    fps.textContent = '已自动降档';
+    fps.dataset.throttled = 'true';
   }
 }
 
@@ -858,9 +856,11 @@ let fpsAcc = 0, fpsN = 0;
 function tick(){
   if (!renderer) return;
 
-  const dt = Math.min(clock.getDelta(), 0.06);
+  const frameDt = clock.getDelta();
+  const dt = Math.min(frameDt, 0.06);
   const now = performance.now();
   const time = clock.elapsedTime;
+  const animationNow = time * 1000;
 
   /* 开场推进 */
   if (introT < 1){
@@ -887,8 +887,8 @@ function tick(){
   pulse *= 0.94;
   kick *= 0.93;
   if (kick > 0.001){
-    tmpPos.x += Math.sin(now * 0.02) * kick * 0.5;
-    tmpPos.y += Math.cos(now * 0.017) * kick * 0.35;
+    tmpPos.x += Math.sin(animationNow * 0.02) * kick * 0.5;
+    tmpPos.y += Math.cos(animationNow * 0.017) * kick * 0.35;
   }
 
   /* 鼠标视差 */
@@ -901,7 +901,7 @@ function tick(){
   camera.fov = 55 + (1 - introT) * 34;
   camera.updateProjectionMatrix();
   camera.lookAt(tmpTgt);
-  camera.rotation.z += -smx * 0.022 + Math.sin(now * 0.00013) * 0.012;
+  camera.rotation.z += -smx * 0.022 + Math.sin(animationNow * 0.00013) * 0.012;
 
   /* 场景动态 */
   MATERIALS.forEach(m => {
@@ -988,20 +988,20 @@ function tick(){
   if (bar) bar.style.width = (p * 100).toFixed(2) + '%';
 
   /* 脉冲时提升辉光强度 */
-  if (bloomPass) bloomPass.strength = (MOBILE ? 0.34 : 0.46) + pulse * 0.55 + introT * 0.04;
+  if (bloomPass) bloomPass.strength = (MOBILE ? 0.34 : 0.46) + pulse * 0.55;
 
   /* 渲染 */
   if (composer) composer.render();
   else renderer.render(scene, camera);
 
   /* 帧率显示 */
-  fpsAcc += dt; fpsN++;
+  fpsAcc += frameDt; fpsN++;
   if (fpsAcc >= 0.5){
     const fpsEl = document.getElementById('fps');
     if (fpsEl && !perf.throttled) fpsEl.textContent = Math.round(fpsN / fpsAcc) + ' FPS';
     fpsAcc = 0; fpsN = 0;
   }
-  perfGuard(dt);
+  perfGuard(frameDt);
 }
 
 if (renderer){
@@ -1025,9 +1025,23 @@ if (renderer){
   })();
 
   renderer.setAnimationLoop(tick);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden){ /* 暂停时丢弃累积时间，回来不跳帧 */
-      clock.getDelta();
+  let hiddenAt = null;
+  function syncVisibility(){
+    const now = performance.now();
+    discardClockDelta(clock);
+    perf.resetWindow();
+    fpsAcc = 0; fpsN = 0;
+    if (document.hidden){
+      hiddenAt = now;
+      renderer.setAnimationLoop(null);
+    } else {
+      if (hiddenAt !== null && introT < 1) {
+        introStart = introStart <= hiddenAt ? introStart + now - hiddenAt : now;
+      }
+      hiddenAt = null;
+      renderer.setAnimationLoop(tick);
     }
-  });
+  }
+  document.addEventListener('visibilitychange', syncVisibility);
+  if (document.hidden) syncVisibility();
 }

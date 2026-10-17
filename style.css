@@ -274,6 +274,7 @@ body.loaded .dots{opacity:1}
   opacity:0;transition:opacity 1s var(--ease) 1.5s;
 }
 body.loaded .foot{opacity:1}
+.foot #fps[data-throttled="true"]{display:block;flex-shrink:0}
 
 /* ---------- 加载页 ---------- */
 #loader{
@@ -316,6 +317,7 @@ body.loaded #loader{opacity:0;visibility:hidden}
   padding:14px 16px;border-radius:10px;
   white-space:pre-wrap;
 }
+.no-webgl .ch:not([data-key="genesis"]),.no-webgl .dots,.no-webgl .topnav,.no-webgl .scroll-cue{display:none}
 
 /* ---------- 移动端 ---------- */
 @media (max-width:860px){
@@ -335,6 +337,8 @@ body.loaded #loader{opacity:0;visibility:hidden}
 
 /* ---------- 无障碍：减少动态效果 ---------- */
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
-  .ch-inner,.brand,.topnav button,.dots,.foot{transition-duration:.01ms!important}
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;transition-delay:0ms!important;scroll-behavior:auto!important;
+  }
 }
