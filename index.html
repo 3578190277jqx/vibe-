@@ -143,6 +143,11 @@
 <div id="errbox" hidden></div>
 <noscript><div style="padding:40px;color:#fff">序场是面向前端岗位的个人作品项目。请开启 JavaScript，浏览完整的三维交互演示。</div></noscript>
 
+<script type="module">
+import { loadSiteContent } from './site-content.js';
+// 不 await：CMS 请求不参与开场就绪条件，默认文字始终先显示。
+void loadSiteContent();
+</script>
 <script type="module" src="./world.js"></script>
 </body>
 </html>
