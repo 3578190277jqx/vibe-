@@ -30,7 +30,7 @@ async function serveStatic(path, request, response, root) {
   if (!root || !['GET', 'HEAD'].includes(request.method)) return false;
   const name = path === '/' ? '/index.html' : path;
   const vendor = /^\/vendor\/[a-zA-Z0-9_./-]+\.js$/.test(name);
-  if (!['/index.html', '/style.css', '/world.js', '/world-layout.js', '/world-products.js', '/lead-form.js', '/site-content.js'].includes(name) && !vendor) return false;
+  if (!['/index.html', '/style.css', '/mobile.css', '/world.js', '/world-layout.js', '/world-products.js', '/lead-form.js', '/site-content.js'].includes(name) && !vendor) return false;
   try {
     const base = await realpath(root instanceof URL ? fileURLToPath(root) : root);
     const allowedRoot = vendor ? await realpath(resolve(base, 'vendor')) : base;

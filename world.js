@@ -23,7 +23,7 @@ import { bindLeadForm } from './lead-form.js';
 /* ---------- 1. 环境 ---------- */
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const MOBILE  = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 820;
+const MOBILE  = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 860;
 
 const FOG_COLOR  = new THREE.Color(0x080c18);
 const FOG_DENSITY = 0.0100;
@@ -361,11 +361,11 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
     return new THREE.Points(geo, mat);
   }
 
-  const stars = buildStars(MOBILE ? 1500 : 4200, 400, 66, 0xb8d6ff, 320);
+  const stars = buildStars(MOBILE ? 800 : 4200, 400, 66, 0xb8d6ff, 320);
   stars.frustumCulled = false;
   scene.add(stars);
 
-  const dust = buildStars(MOBILE ? 420 : 1100, 165, 38, 0xe4f0ff, 130);
+  const dust = buildStars(MOBILE ? 180 : 1100, 165, 38, 0xe4f0ff, 130);
   dust.position.set(28, 2, -44);
   dust.frustumCulled = false;
   scene.add(dust);
@@ -617,7 +617,7 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
 
   /* 门户星环 */
   (function portalDust(){
-    const count = MOBILE ? 120 : 260;
+    const count = MOBILE ? 72 : 260;
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(count * 3);
     const scl = new Float32Array(count);
@@ -734,6 +734,13 @@ function updateChapters(p){
     el.style.transform = 'translateY(' + ((1 - rise) * (i === 0 ? 0 : 30)).toFixed(1) + 'px)';
 
     const act = op > 0.55;
+    if (act !== el.classList.contains('is-active')) {
+      el.classList.toggle('is-active', act);
+      if (!act) {
+        const inner = el.querySelector('.ch-inner');
+        if (inner) inner.scrollTop = 0;
+      }
+    }
     el.querySelectorAll('.cta-actions').forEach(x => {
       x.style.pointerEvents = act ? 'auto' : 'none';
       x.inert = !act;
