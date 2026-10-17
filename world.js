@@ -16,7 +16,7 @@ import { EffectComposer }   from './vendor/jsm/postprocessing/EffectComposer.js'
 import { RenderPass }       from './vendor/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass }  from './vendor/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass }       from './vendor/jsm/postprocessing/OutputPass.js';
-import { ANCHORS, AT as POSITIONS, CHAPTER_LABELS, WINDOWS, chapterProgress, chapterFade, activeChapter } from './world-layout.js';
+import { ANCHORS, AT as POSITIONS, CHAPTER_LABELS, WINDOWS, chapterProgress, chapterFade, activeChapter, chapterFocusWeight, createChapterFocus } from './world-layout.js';
 import { createProductShowcase, animateProducts } from './world-products.js';
 import { bindLeadForm } from './lead-form.js';
 import { FrameBudget, discardClockDelta } from './world-runtime.js';
@@ -32,6 +32,13 @@ const FOG_DENSITY = 0.0100;
 /* 布局在 world-layout.js 统一维护；七个锚点的 p = i / 6。
    必须继续用 getPoint(p)，不能按弧长重参数化。 */
 const AT = Object.fromEntries(Object.entries(POSITIONS).map(([key, xyz]) => [key, new THREE.Vector3(...xyz)]));
+
+function frameCamera(progress = 0){
+  const w = window.innerWidth, h = window.innerHeight;
+  const productsFocus = chapterFocusWeight(progress, CHAPTER_LABELS.indexOf('Products'), ANCHORS.length);
+  // 路径与 FOV 不变：桌面主体靠右，手机主体抬高；产品章沿用原有上方陈列。
+  camera.setViewOffset(w, h, w > 860 ? -w * (0.16 - productsFocus * 0.06) : 0, w <= 860 ? h * 0.14 * (1 - productsFocus) : 0, w, h);
+}
 
 /* ---------- 工具 ---------- */
 
@@ -209,12 +216,13 @@ void main(){
 
 const POINTS_FRAG = /* glsl */`
 uniform vec3 uColor;
+uniform float uOpacity;
 varying float vAlpha;
 void main(){
   float d = length(gl_PointCoord - vec2(0.5));
   float a = smoothstep(0.5, 0.06, d);
   float core = smoothstep(0.22, 0.0, d);
-  gl_FragColor = vec4(uColor * (0.7 + core * 1.4), a * a * vAlpha);
+  gl_FragColor = vec4(uColor * (0.7 + core * 1.4), a * a * vAlpha * uOpacity);
 }
 `;
 
@@ -247,7 +255,7 @@ function aetherMaterial({
     },
     vertexShader: AETHER_VERT,
     fragmentShader: AETHER_FRAG,
-    transparent: additive,
+    transparent: true,
     blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
     depthWrite: !additive,
     side: side || (additive ? THREE.BackSide : THREE.FrontSide),
@@ -324,6 +332,7 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
 
   camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 480);
   camera.position.set(ANCHORS[0].cam[0], ANCHORS[0].cam[1], ANCHORS[0].cam[2]);
+  frameCamera();
 
   glowTex = makeGlowTexture();
 
@@ -351,7 +360,8 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
         uPixel:      { value: dpr * window.innerHeight / 900 },
         uSpread:     { value: 2.2 },
         uFogDensity: { value: FOG_DENSITY * 0.55 },
-        uColor:      { value: new THREE.Color(color) }
+        uColor:      { value: new THREE.Color(color) },
+        uOpacity:    { value: 1 }
       },
       vertexShader: POINTS_VERT,
       fragmentShader: POINTS_FRAG,
@@ -588,14 +598,15 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
       uniforms: {
         uColorA: { value: new THREE.Color(0x082a52) },
         uColorB: { value: new THREE.Color(0x4fa8d8) },
-        uTime:   { value: 0 }
+        uTime:   { value: 0 },
+        uOpacity: { value: 1 }
       },
       vertexShader: `
         varying vec2 vUv;
         void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
       `,
       fragmentShader: `
-        uniform vec3 uColorA; uniform vec3 uColorB; uniform float uTime;
+        uniform vec3 uColorA; uniform vec3 uColorB; uniform float uTime; uniform float uOpacity;
         varying vec2 vUv;
         void main(){
           float r = length(vUv - vec2(0.5)) * 2.0;
@@ -603,7 +614,7 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
           float swirl = 0.5 + 0.5 * sin(r * 22.0 - uTime * 1.6 + atan(vUv.y-0.5, vUv.x-0.5) * 3.0);
           vec3 col = mix(uColorA, uColorB, edge * (0.5 + swirl * 0.6));
           float a = (0.05 + edge * 0.30) * (1.0 - smoothstep(0.95, 1.0, r));
-          gl_FragColor = vec4(col * (0.22 + swirl * 0.48), a);
+          gl_FragColor = vec4(col * (0.22 + swirl * 0.48), a * uOpacity);
         }
       `,
       transparent: true,
@@ -643,7 +654,8 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
         uPixel: { value: dpr * window.innerHeight / 900 },
         uSpread: { value: 0.5 },
         uFogDensity: { value: FOG_DENSITY * 0.4 },
-        uColor: { value: new THREE.Color(0xcfeaff) }
+        uColor: { value: new THREE.Color(0xcfeaff) },
+        uOpacity: { value: 1 }
       },
       vertexShader: POINTS_VERT,
       fragmentShader: POINTS_FRAG,
@@ -656,6 +668,9 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
     pts.frustumCulled = false;
     gPortal.add(pts);
   })();
+
+  const chapterFocus = createChapterFocus([gCore, gShards, gKnot, gOrbit, gSwarm, gProducts, gPortal]);
+  chapterFocus.update(0);
 
   /* ---- 后期处理 ---- */
   try {
@@ -736,6 +751,8 @@ function updateChapters(p){
     el.style.transform = 'translateY(' + ((1 - rise) * (i === 0 ? 0 : 30)).toFixed(1) + 'px)';
 
     const act = op > 0.55;
+    el.inert = !act;
+    el.setAttribute('aria-hidden', String(!act));
     if (act !== el.classList.contains('is-active')) {
       el.classList.toggle('is-active', act);
       if (!act) {
@@ -819,7 +836,7 @@ function onResize(){
   if (!renderer) return;
   const w = window.innerWidth, h = window.innerHeight;
   camera.aspect = w / h;
-  camera.updateProjectionMatrix();
+  frameCamera(smoothP);
   renderer.setSize(w, h);
   if (composer){ composer.setSize(w, h); }
   if (bloomPass && bloomPass.setSize) bloomPass.setSize(w, h);
@@ -874,6 +891,7 @@ function tick(){
   smy += (my - smy) * 0.055;
 
   const p = smoothP;
+  chapterFocus.update(p);
 
   /* 摄像机沿锚点曲线飞行；p = i/6 时正好落在第 i 个锚点 */
   camPosCurve.getPoint(p, tmpPos);
@@ -899,7 +917,7 @@ function tick(){
 
   camera.position.copy(tmpPos);
   camera.fov = 55 + (1 - introT) * 34;
-  camera.updateProjectionMatrix();
+  frameCamera(p);
   camera.lookAt(tmpTgt);
   camera.rotation.z += -smx * 0.022 + Math.sin(animationNow * 0.00013) * 0.012;
 

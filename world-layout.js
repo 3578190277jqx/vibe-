@@ -46,3 +46,37 @@ export function chapterFade(t) {
 export function activeChapter(progress) {
   return Math.max(0, Math.min(ANCHORS.length - 1, Math.round(progress * (ANCHORS.length - 1))));
 }
+
+export function chapterFocusWeight(progress, index, count) {
+  const distance = Math.abs(progress * (count - 1) - index);
+  const t = Math.max(0, Math.min(1, (distance - 0.35) / 0.6));
+  return 1 - t * t * (3 - 2 * t);
+}
+
+export function createChapterFocus(groups) {
+  const entries = groups.map(group => {
+    const materials = new Map();
+    group.traverse(node => {
+      for (const material of [node.material].flat().filter(Boolean)) {
+        if (!materials.has(material)) materials.set(material, {
+          opacity: material.uniforms?.uOpacity?.value ?? material.opacity,
+          depthWrite: material.depthWrite
+        });
+      }
+    });
+    return { group, materials };
+  });
+  return {
+    update(progress) {
+      entries.forEach(({ group, materials }, index) => {
+        const weight = chapterFocusWeight(progress, index, entries.length);
+        group.visible = weight > 0.001;
+        for (const [material, original] of materials) {
+          if (material.uniforms?.uOpacity) material.uniforms.uOpacity.value = original.opacity * weight;
+          else material.opacity = original.opacity * weight;
+          material.depthWrite = original.depthWrite && weight >= 0.999;
+        }
+      });
+    }
+  };
+}

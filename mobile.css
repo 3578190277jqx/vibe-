@@ -7,6 +7,9 @@
   .topbar{
     padding:calc(18px + env(safe-area-inset-top,0px)) var(--mobile-inline) 18px;
   }
+  .brand{gap:10px;font-size:17px;letter-spacing:.14em}
+  .brand-mark{width:20px;height:20px}
+  .topnav button{padding:9px 20px;font-size:12px}
   .ch{
     align-items:flex-end;
     padding:calc(84px + env(safe-area-inset-top,0px)) var(--mobile-inline) calc(104px + var(--mobile-bottom));
@@ -22,11 +25,13 @@
     font-size:clamp(28px,8vw,36px);line-height:1.12;
     margin-bottom:14px;overflow-wrap:anywhere;
   }
+  .ch[data-key="genesis"] h2{font-size:clamp(31px,8.5vw,36px);line-height:1.12;margin-bottom:18px}
   .ch p{font-size:14.5px;line-height:1.7;color:rgba(245,245,247,.82);overflow-wrap:anywhere}
   .ch p,.eyebrow,.tags span,.cta-note{text-shadow:0 2px 24px rgba(0,0,0,.8)}
-  .tags{margin-top:18px;gap:6px}
-  .tags span{font-size:11px;padding:4px 10px;color:var(--ink-2);overflow-wrap:anywhere}
-  .scroll-cue{margin-top:22px;font-size:10px;letter-spacing:.12em}
+  .tags{margin-top:18px;gap:0;row-gap:8px}
+  .tags span{font-size:11px;color:var(--ink-2);overflow-wrap:anywhere}
+  .tags span+span::before{margin:0 9px}
+  .scroll-cue{margin-top:18px;font-size:12px;letter-spacing:.04em}
 
   .cta-actions{margin-top:22px;width:100%}
   .cf{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;width:100%;max-width:none}
@@ -40,11 +45,11 @@
     transform:translateX(-50%);flex-direction:row;gap:0;z-index:2;
   }
   .dots button,.dots button:hover,.dots button.on{
-    display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;
+    display:grid;place-items:center;place-content:center;width:44px;height:44px;flex:0 0 44px;
     border-radius:50%;background:transparent;box-shadow:none;
     touch-action:manipulation;-webkit-tap-highlight-color:transparent;
   }
-  .dots button::before{
+  .dots button::before,.dots button:hover::before{
     content:"";width:6px;height:6px;border-radius:50%;
     background:rgba(245,245,247,.35);
     transition:background .2s var(--ease),box-shadow .2s var(--ease);
