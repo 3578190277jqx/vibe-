@@ -36,8 +36,15 @@ const AT = Object.fromEntries(Object.entries(POSITIONS).map(([key, xyz]) => [key
 function frameCamera(progress = 0){
   const w = window.innerWidth, h = window.innerHeight;
   const productsFocus = chapterFocusWeight(progress, CHAPTER_LABELS.indexOf('Products'), ANCHORS.length);
+  const swarmFocus = chapterFocusWeight(progress, CHAPTER_LABELS.indexOf('Swarm'), ANCHORS.length);
+  const swarmLift = 0.14 + swarmFocus * (1 - showcaseRoom()) * 0.20;
+  const swarmShift = 0.04 + Math.max(0, 1 - w / 1120) * 0.20;
   // 路径与 FOV 不变：桌面主体靠右，手机主体抬高；产品章沿用原有上方陈列。
-  camera.setViewOffset(w, h, w > 860 ? -w * (0.16 - productsFocus * 0.06) : 0, w <= 860 ? h * 0.14 * (1 - productsFocus) : 0, w, h);
+  camera.setViewOffset(w, h, w > 860 ? -w * (0.16 - productsFocus * 0.06 + swarmFocus * swarmShift) : 0, w <= 860 ? h * swarmLift * (1 - productsFocus) : 0, w, h);
+}
+
+function showcaseRoom(){
+  return Math.max(0.35, Math.min(1, (window.innerHeight - 400) / 300));
 }
 
 /* ---------- 工具 ---------- */
@@ -449,11 +456,11 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
   scene.add(gShards);
 
   const shardMat = aetherMaterial({ colorA: 0x101640, colorB: 0x4fa8d8, rim: 0x9fe4ff,
-                                    amp: 0.14, freq: 3.0, rimPower: 2.1, glow: 1.50, shade: 0.62 });
+                                    amp: 0.14, freq: 3.0, rimPower: 2.1, glow: 1.05, shade: 0.52 });
   const shardGeos = [
-    new THREE.OctahedronGeometry(0.95, 2),
-    new THREE.TetrahedronGeometry(1.15, 2),
-    new THREE.OctahedronGeometry(0.62, 2)
+    new THREE.OctahedronGeometry(0.95, 0),
+    new THREE.TetrahedronGeometry(1.15, 0),
+    new THREE.OctahedronGeometry(0.62, 0)
   ];
   const shards = [];
   for (let i = 0; i < 14; i++){
@@ -534,6 +541,8 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
   /* ---- 章节 5：群集 ---- */
   const gSwarm = new THREE.Group();
   gSwarm.position.copy(AT.swarm);
+  // 收紧整个陈列并略向镜头倾斜，避免近排方块穿出画面、压住正文。
+  gSwarm.rotation.x = 0.50;
   scene.add(gSwarm);
 
   const swarmMat = aetherMaterial({ colorA: 0x171142, colorB: 0x6f5fd8, rim: 0xa89cf0,
@@ -563,11 +572,18 @@ let dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 1.75);
   const productDetail = aetherMaterial({ colorA: 0x16324a, colorB: 0x7ad1ff, rim: 0x9fe4ff,
                                          amp: 0, glow: 0.7, shade: 0.4, pulseScale: 0 });
   const { group: gProducts, items: products } = createProductShowcase({ body: productBody, trim: productTrim, detail: productDetail });
-  gProducts.position.copy(AT.products);
-  gProducts.position.x += MOBILE ? 0 : 4.2;
-  gProducts.scale.setScalar(MOBILE ? 0.48 : 1);
-  gProducts.position.y += MOBILE ? 3.2 : 0;
-  if (MOBILE) products.forEach((product, i) => { product.position.x = (i - 1) * 1.8; });
+  function layoutShowcases(){
+    const compact = window.innerWidth <= 860;
+    const room = compact ? showcaseRoom() : 1;
+    const desktopFit = Math.min(1, window.innerWidth / window.innerHeight / 1.6);
+    gSwarm.scale.setScalar(compact ? 0.40 * room : 0.44 * desktopFit);
+    gProducts.position.copy(AT.products);
+    gProducts.position.x += compact ? 0 : 4.2 * desktopFit;
+    gProducts.position.y += compact ? 2 + (1 - room) * 3 : 0;
+    gProducts.scale.setScalar(compact ? 0.72 * room : desktopFit);
+    products.forEach((product, i) => { product.position.x = (i - 1) * (compact ? 2.4 : 3.25); });
+  }
+  layoutShowcases();
   scene.add(gProducts);
   addGlow(gProducts, 10, 0x4fa8d8, 0.16);
 
@@ -712,6 +728,8 @@ function readScroll(){
 window.addEventListener('scroll', readScroll, { passive: true });
 
 window.addEventListener('pointermove', e => {
+  // 触摸拖动只驱动滚动；手机和减少动态效果模式不累积鼠标视差。
+  if (MOBILE || window.innerWidth <= 860 || REDUCED || e.pointerType !== 'mouse') return;
   mx = (e.clientX / window.innerWidth) * 2 - 1;
   my = (e.clientY / window.innerHeight) * 2 - 1;
 }, { passive: true });
@@ -835,6 +853,8 @@ bindLeadForm({
 function onResize(){
   if (!renderer) return;
   const w = window.innerWidth, h = window.innerHeight;
+  layoutShowcases();
+  if (w <= 860) mx = my = smx = smy = 0;
   camera.aspect = w / h;
   frameCamera(smoothP);
   renderer.setSize(w, h);
